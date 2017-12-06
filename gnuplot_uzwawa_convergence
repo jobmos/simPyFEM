@@ -1,0 +1,14 @@
+set term postscript eps color dash
+set output 'uzawa_convergence.eps'
+
+set log y
+set grid
+
+set key box height 1 width 1
+
+plot 'VP_diff_uzawa1.dat' using 1:2 title 'V\_diff uzawa1' with lines lw 5 lc 1, \
+     'VP_diff_uzawa1.dat' using 1:3 title 'P\_diff uzawa1' with lines lw 5 lc 1 dashtype 3, \
+     'VP_diff_uzawa2.dat' using 1:2 title 'V\_diff uzawa2' with lines lw 5 lc 2 , \
+     'VP_diff_uzawa2.dat' using 1:3 title 'P\_diff uzawa2' with lines lw 5 lc 2 dashtype 3, \
+     'VP_diff_uzawa3.dat' using 1:2 title 'V\_diff uzawa3' with lines lw 5 lc 3, \
+     'VP_diff_uzawa3.dat' using 1:3 title 'P\_diff uzawa3' with lines lw 5 lc 3 dashtype 3, \
