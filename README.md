@@ -1,5 +1,3 @@
-![alt text](https://github.com/jobmos/simPyFEM/blob/master/uzawa_convergence.png)
-
 # SimPyFem
 
 SimPyFEM is a simple finite element Python 3 code built for educational purposes. 
@@ -44,6 +42,12 @@ simPyFEM\_K\_G\_GT has some plotting functionality. Simple close both plots to e
 
 simPyFEM\_K\_G\_GT has the option to test for three different Uzawa outer solve methods.
 To choose one, simple (un)comment the one you desire with a '#' symbol
+
+## Uzawa results
+
+Convergence of the three different uzawa methods is as follows:
+
+![alt text](https://github.com/jobmos/simPyFEM/blob/master/uzawa_convergence.png)
 
 ## Authors
 
