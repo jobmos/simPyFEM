@@ -1,4 +1,4 @@
-# SimPyFem
+# SimPyFEM
 
 SimPyFEM is a simple finite element Python 3 code built for educational purposes. 
 This is a direct translation from the Fortran 90 version of simpleFEM by Cedric Thielot.
@@ -6,7 +6,7 @@ It showcases functional illustrations of the various features of a FEM code: the
 
 ## Getting Started
 
-To run simPyFem, copy the one or all of the files to your local machine.
+To run simPyFEM, copy the one or all of the files to your local machine.
 
 ### Prerequisites
 
