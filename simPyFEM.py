@@ -1,3 +1,19 @@
+#right hand side setup function 1
+def b1(x,y):
+    b1 =((12.0-24.0*y)*x**4 + (-24.0+48.0*y)*x**3 + 
+        (-48.0*y+72.0*y**2-48.0*y**3+12.0)*x**2 +
+        (-2.0+24.0*y-72.0*y**2+48.0*y**3)*x + 
+        1.0-4.0*y+12.0*y**2-8.0*y**3 )
+    return b1
+
+#right hand side setup function 2
+def b2(x,y):
+    b2 =((8.0-48.0*y+48.0*y**2)*x**3 + 
+        (-12.0+72.0*y-72*y**2)*x**2 +
+        (4.0-24.0*y+48.0*y**2-48.0*y**3+24.0*y**4)*x - 
+        12.0*y**2 + 24.0*y**3 -12.0*y**4)
+    return b2
+
 #importing packages etc.
 print("importing pacakages")
 
@@ -6,6 +22,9 @@ import math as math
 import sys as sys
 import scipy as scipy
 from scipy import sparse as sparse
+from scipy.sparse.linalg import spsolve
+import time as time
+import matplotlib.pyplot as plt
 
 #variable declaration
 print("variable declaration")
@@ -16,8 +35,17 @@ ndof=2              # degrees of freedom per node
 Lx=1                # nondimensionalized size of system, x
 Ly=1                # nondimensionalized size of system, y
 
-nnx=31              # resolution, x
-nny=31              # resolution, y
+#allowing for argument parsing through command line
+if int(len(sys.argv)==3):
+      nnx=int(sys.argv[1])
+      nny=int(sys.argv[2])
+else:
+      nnx=32
+      nny=32
+
+
+#nnx=50              # resolution, x
+#nny=50              # resolution, y
 
 np=nnx*nny          # number of points
 
@@ -35,8 +63,8 @@ Nfem=np*ndof        # Total number of degrees of freedom
 
 eps=1.0e-10
 
-gx=0                # gravity, x
-gy=1                # gravity, y
+#gx=0                # gravity, x
+#gy=1                # gravity, y
 
 #declaring arrays
 print("declaring arrays")
@@ -191,12 +219,14 @@ for iel in range (0,nel):
             #computing elemental A matrix
             Ael=Ael+numpy.matmul(Bmat.transpose(),numpy.matmul(viscosity*Cmat,Bmat))*wq*jcob
             
-            #computing elemental B matrix
+            #computing elemental B vector
             for i in range(0,m):
                 i1=2*i
                 i2=2*i+1
-                Bel[i1]=Bel[i1]+N[i]*jcob*wq*density*gx
-                Bel[i2]=Bel[i2]+N[i]*jcob*wq*density*gy
+                #Bel[i1]=Bel[i1]+N[i]*jcob*wq*density*gx
+                #Bel[i2]=Bel[i2]+N[i]*jcob*wq*density*gy
+                Bel[i1]=Bel[i1]+N[i]*jcob*wq*b1(xq,yq)
+                Bel[i2]=Bel[i2]+N[i]*jcob*wq*b2(xq,yq)
     
     #integrate penalty term at 1 point
     rq=0.0
@@ -270,10 +300,16 @@ print("minimum A =",numpy.min(A))
 print("maximum A =",numpy.max(A))
 print("minimum B =",numpy.min(B))
 print("maximum B =",numpy.max(B))
+
+A_sparse=sparse.csr_matrix(A)
         
 #solving system
 print("solving system")
-sol=numpy.linalg.solve(A,B)
+start= time.time()
+
+#sol=numpy.linalg.solve(A,B)
+#sol=spsolve(A_sparse,B)
+sol,info=scipy.sparse.linalg.cg(A,B,tol=10e-8)
 
 #putting solution into seprate x,y velocity arrays
 for i in range(0,np):
@@ -283,13 +319,30 @@ for i in range(0,np):
 print("minimum u =",min(u), "maximum u",max(u))
 print("minimum v =",min(v), "maximum v",max(v))
 
-#outputting to file for use with GNUplot
-file1=open('velocity_u.dat','w')
-file2=open('velocity_v.dat','w')
-for i in range(0,np):
-    file1.write(str(x[i]) + ' ' + str(y[i]) + ' ' + str(u[i]) + '\n')
-    file2.write(str(x[i]) + ' ' + str(y[i]) + ' ' + str(v[i]) + '\n')
-file1.close()
-file2.close()
+print("time elapsed:",time.time()-start)
 
-print("END")
+##outputting to file for use with GNUplot
+#file1=open('velocity_u.dat','w')
+#file2=open('velocity_v.dat','w')
+#for i in range(0,np):
+#    file1.write(str(x[i]) + ' ' + str(y[i]) + ' ' + str(u[i]) + '\n')
+#    file2.write(str(x[i]) + ' ' + str(y[i]) + ' ' + str(v[i]) + '\n')
+#file1.close()
+#file2.close()
+
+print("done, close figures to exit out of program.")
+
+#plotting of solution
+fig, axes = plt.subplots(nrows=1, ncols=2,figsize=(10,10))
+
+utemp=numpy.reshape(u,(nnx,nny))
+vtemp=numpy.reshape(v,(nnx,nny))
+
+im = axes[0].imshow(utemp, extent=(numpy.amin(x),numpy.amax(x),numpy.amin(y),numpy.amax(y)),cmap='hot', interpolation='nearest')
+axes[0].set_title('Velocity, x-direction',fontsize=20,y=1.08)
+im = axes[1].imshow(vtemp, extent=(numpy.amin(x),numpy.amax(x),numpy.amin(y),numpy.amax(y)),cmap='hot', interpolation='nearest')
+axes[1].set_title('Velocity, y-direction',fontsize=20,y=1.08)
+fig.subplots_adjust(right=0.80)
+cbar_ax = fig.add_axes([0.85, 0.32, 0.05, 0.39])
+fig.colorbar(im, cax=cbar_ax)
+plt.show()
