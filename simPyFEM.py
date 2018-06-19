@@ -28,14 +28,14 @@ def b2(x, y):
 
 
 def main():
-    # variable declaration
+    # declare variables
     print("variable declaration")
 
     m = 4  # nodes that make up an element
     ndof = 2  # degrees of freedom per node
 
-    Lx = 1  # nondimensional size of system, x
-    Ly = 1  # nondimensional size of system, y
+    lx = 1  # nondimensional size of system, x
+    ly = 1  # nondimensional size of system, y
 
     # allowing for argument parsing through command line
     if int(len(sys.argv) == 3):
@@ -57,68 +57,66 @@ def main():
     viscosity = 1.0  # constant viscosity
     density = 1.0  # constant density
 
-    Nfem = nnp * ndof  # Total number of degrees of freedom
+    nfem = nnp * ndof  # Total number of degrees of freedom
 
     eps = 1.0e-10
 
     gx = 0  # gravity, x
     gy = 1  # gravity, y
 
-    # declaring arrays
+    # declare arrays
     print("declaring arrays")
 
     x = np.zeros(nnp, dtype=float)  # x coordinates
     y = np.copy(x)  # y coordinates
     u = np.copy(x)  # x velocities
     v = np.copy(x)  # y velocities
-    A = np.zeros((Nfem, Nfem), dtype=float)  # matrix of Ax=b
-    B = np.zeros(Nfem, dtype=float)  # righthand side of Ax=b
+    a_mat = np.zeros((nfem, nfem), dtype=float)  # matrix of Ax=b
+    rhs = np.zeros(nfem, dtype=float)  # right hand side of Ax=b
     icon = np.zeros((m, nel), dtype=int)  # connectivity
-    bc_fix = np.zeros(Nfem, dtype=bool)  # boundary condition, yes/no
-    bc_val = np.zeros(Nfem, dtype=float)  # boundary condition, value
-    N = np.zeros(m, dtype=float)  # shape functions
-    dNdx = np.copy(N)  # derivative of shape functions
-    dNdy = np.copy(N)  # " "
-    dNdr = np.copy(N)  # " "
-    dNds = np.copy(N)  # " "
+    bc_fix = np.zeros(nfem, dtype=bool)  # boundary condition, yes/no
+    bc_val = np.zeros(nfem, dtype=float)  # boundary condition, value
+    n = np.zeros(m, dtype=float)  # shape functions
+    dndx = np.copy(n)  # derivative of shape functions
+    dndy = np.copy(n)  # " "
+    dndr = np.copy(n)  # " "
+    dnds = np.copy(n)  # " "
     jcb = np.zeros((2, 2), dtype=float)  # jacobian matrix
-    jcbi = np.copy(jcb)  # inverse of jacobian matrix
-    Bmat = np.zeros((3, ndof * m), dtype=float)  # numerical integration matrix
-    Kmat = np.zeros((3, 3), dtype=float)  # " "
-    Cmat = np.copy(Kmat)  # " "
+    b_mat = np.zeros((3, ndof * m), dtype=float)  # numerical integration matrix
+    k_mat = np.zeros((3, 3), dtype=float)  # " "
+    c_mat = np.copy(k_mat)  # " "
 
-    Kmat[0, 0] = 1.0
-    Kmat[0, 1] = 1.0
-    Kmat[0, 2] = 0.0
-    Kmat[1, 0] = 1.0
-    Kmat[1, 1] = 1.0
-    Kmat[1, 2] = 0.0
-    Kmat[2, 0] = 0.0
-    Kmat[2, 1] = 0.0
-    Kmat[2, 2] = 0.0
+    k_mat[0, 0] = 1.0
+    k_mat[0, 1] = 1.0
+    k_mat[0, 2] = 0.0
+    k_mat[1, 0] = 1.0
+    k_mat[1, 1] = 1.0
+    k_mat[1, 2] = 0.0
+    k_mat[2, 0] = 0.0
+    k_mat[2, 1] = 0.0
+    k_mat[2, 2] = 0.0
 
-    Cmat[0, 0] = 2.0
-    Cmat[0, 1] = 0.0
-    Cmat[0, 2] = 0.0
-    Cmat[1, 0] = 0.0
-    Cmat[1, 1] = 2.0
-    Cmat[1, 2] = 0.0
-    Cmat[2, 0] = 0.0
-    Cmat[2, 1] = 0.0
-    Cmat[2, 2] = 1.0
+    c_mat[0, 0] = 2.0
+    c_mat[0, 1] = 0.0
+    c_mat[0, 2] = 0.0
+    c_mat[1, 0] = 0.0
+    c_mat[1, 1] = 2.0
+    c_mat[1, 2] = 0.0
+    c_mat[2, 0] = 0.0
+    c_mat[2, 1] = 0.0
+    c_mat[2, 2] = 1.0
 
     # grid point setup
     print("grid point setup")
     counter = 0
     for j in range(0, nely + 1):
         for i in range(0, nelx + 1):
-            x[counter] = i * Lx / nelx
-            y[counter] = j * Ly / nely
+            x[counter] = i * lx / nelx
+            y[counter] = j * ly / nely
             counter += 1
 
     # connectivity
     print("connectivity")
-
     counter = 0
     for j in range(0, nely):
         for i in range(0, nelx):
@@ -135,39 +133,39 @@ def main():
     #         print ("node 3",icon[2][iel],"at pos.",x[icon[2][iel-1]], y[icon[2][iel-1]])
     #         print ("node 4",icon[3][iel],"at pos.",x[icon[3][iel-1]], y[icon[3][iel-1]])
 
-    # defining boundary conditions
+    # define boundary conditions
     print("defining boundary conditions")
 
     for i in range(0, nnp):
         if x[i] < eps:
             bc_fix[i * ndof] = True
-            bc_val[i * ndof] = 0.0
+            bc_val[i * ndof] = False
             bc_fix[i * ndof + 1] = True
-            bc_val[i * ndof + 1] = 0.0
-        if x[i] > (Lx - eps):
+            bc_val[i * ndof + 1] = False
+        if x[i] > (lx - eps):
             bc_fix[i * ndof] = True
-            bc_val[i * ndof] = 0.0
+            bc_val[i * ndof] = False
             bc_fix[i * ndof + 1] = True
-            bc_val[i * ndof + 1] = 0.0
+            bc_val[i * ndof + 1] = False
         if y[i] < eps:
             bc_fix[i * ndof] = True
-            bc_val[i * ndof] = 0.0
+            bc_val[i * ndof] = False
             bc_fix[i * ndof + 1] = True
-            bc_val[i * ndof + 1] = 0.0
-        if y[i] > (Ly - eps):
+            bc_val[i * ndof + 1] = False
+        if y[i] > (ly - eps):
             bc_fix[i * ndof] = True
-            bc_val[i * ndof] = 0.0
+            bc_val[i * ndof] = False
             bc_fix[i * ndof + 1] = True
-            bc_val[i * ndof + 1] = 0.0
+            bc_val[i * ndof + 1] = False
 
-    # building FE matrix
+    # build FE matrix
     print("building FE matrix")
 
     for iel in range(0, nel):
 
-        # setting 2 arrays to 0 every loop
-        Bel = [0 for i in range(0, m * ndof)]  # using list comprehension
-        Ael = np.zeros((m * ndof, m * ndof), dtype=float)  # can we also use 2D list comprehension?
+        # set 2 arrays to 0 every loop
+        b_el = np.zeros(m * ndof)
+        a_el = np.zeros((m * ndof, m * ndof), dtype=float)  # can we also use 2D list comprehension?
 
         # integrate viscous term at 4 quadrature points
         for iq in range(-1, 3, 2):
@@ -177,40 +175,42 @@ def main():
 
                 wq = 1.0 * 1.0
 
-                # shape functions
-                N[0] = 0.25 * (1.0 - rq) * (1.0 - sq)
-                N[1] = 0.25 * (1.0 + rq) * (1.0 - sq)
-                N[2] = 0.25 * (1.0 + rq) * (1.0 + sq)
-                N[3] = 0.25 * (1.0 - rq) * (1.0 + sq)
+                # calculate shape functions
+                n[0] = 0.25 * (1.0 - rq) * (1.0 - sq)
+                n[1] = 0.25 * (1.0 + rq) * (1.0 - sq)
+                n[2] = 0.25 * (1.0 + rq) * (1.0 + sq)
+                n[3] = 0.25 * (1.0 - rq) * (1.0 + sq)
 
-                # shape function derivatives
-                dNdr[0] = - 0.25 * (1.0 - sq)
-                dNds[0] = - 0.25 * (1.0 - rq)
-                dNdr[1] = + 0.25 * (1.0 - sq)
-                dNds[1] = - 0.25 * (1.0 + rq)
-                dNdr[2] = + 0.25 * (1.0 + sq)
-                dNds[2] = + 0.25 * (1.0 + rq)
-                dNdr[3] = - 0.25 * (1.0 + sq)
-                dNds[3] = + 0.25 * (1.0 - rq)
+                # calculate shape function derivatives
+                dndr[0] = - 0.25 * (1.0 - sq)
+                dnds[0] = - 0.25 * (1.0 - rq)
+                dndr[1] = + 0.25 * (1.0 - sq)
+                dnds[1] = - 0.25 * (1.0 + rq)
+                dndr[2] = + 0.25 * (1.0 + sq)
+                dnds[2] = + 0.25 * (1.0 + rq)
+                dndr[3] = - 0.25 * (1.0 + sq)
+                dnds[3] = + 0.25 * (1.0 - rq)
 
-                # jacobian matrix
+                # calculate jacobian matrix
                 jcb = np.zeros((2, 2), dtype=float)
                 for k in range(0, m):
-                    jcb[0, 0] = jcb[0, 0] + dNdr[k] * x[icon[k, iel]]
-                    jcb[0, 1] = jcb[0, 1] + dNdr[k] * y[icon[k, iel]]
-                    jcb[1, 0] = jcb[1, 0] + dNds[k] * x[icon[k, iel]]
-                    jcb[1, 1] = jcb[1, 1] + dNds[k] * y[icon[k, iel]]
+                    jcb[0, 0] = jcb[0, 0] + dndr[k] * x[icon[k, iel]]
+                    jcb[0, 1] = jcb[0, 1] + dndr[k] * y[icon[k, iel]]
+                    jcb[1, 0] = jcb[1, 0] + dnds[k] * x[icon[k, iel]]
+                    jcb[1, 1] = jcb[1, 1] + dnds[k] * y[icon[k, iel]]
 
-                # determinant of the jacobian
-                jcob = jcb[0, 0] * jcb[1, 1] - jcb[1, 0] * jcb[0, 1]
+                # calculate determinant of the jacobian
+                # jcob = jcb[0, 0] * jcb[1, 1] - jcb[1, 0] * jcb[0, 1]
+                jcob = np.linalg.det(jcb)
 
-                # inverse of the jacobian matrix
-                jcbi[0, 0] = jcb[1, 1] / jcob
-                jcbi[0, 1] = - jcb[0, 1] / jcob
-                jcbi[1, 0] = - jcb[1, 0] / jcob
-                jcbi[1, 1] = jcb[0, 0] / jcob
+                # calculate inverse of the jacobian matrix
+                # jcbi[0, 0] = jcb[1, 1] / jcob
+                # jcbi[0, 1] = - jcb[0, 1] / jcob
+                # jcbi[1, 0] = - jcb[1, 0] / jcob
+                # jcbi[1, 1] = jcb[0, 0] / jcob
+                jcbi = np.linalg.inv(jcb)
 
-                # computing dNdx & dNdy
+                # compute dndx & dndy
                 xq = 0.0
                 yq = 0.0
                 uq = 0.0
@@ -219,88 +219,87 @@ def main():
                 eyyq = 0.0
                 exyq = 0.0
                 for k in range(0, m):
-                    xq = xq + N[k] * x[icon[k, iel]]
-                    yq = yq + N[k] * y[icon[k, iel]]
-                    uq = uq + N[k] * u[icon[k, iel]]
-                    vq = vq + N[k] * v[icon[k, iel]]
-                    dNdx[k] = jcbi[0, 0] * dNdr[k] + jcbi[0, 1] * dNds[k]
-                    dNdy[k] = jcbi[1, 0] * dNdr[k] + jcbi[1, 1] * dNds[k]
-                    exxq = exxq + dNdx[k] * u[icon[k, iel]]
-                    eyyq = eyyq + dNdy[k] * v[icon[k, iel]]
-                    exyq = exyq + dNdx[k] * v[icon[k, iel]] * 0.5 + dNdy[k] * u[icon[k, iel]] * 0.5
+                    xq = xq + n[k] * x[icon[k, iel]]
+                    yq = yq + n[k] * y[icon[k, iel]]
+                    uq = uq + n[k] * u[icon[k, iel]]
+                    vq = vq + n[k] * v[icon[k, iel]]
+                    dndx[k] = jcbi[0, 0] * dndr[k] + jcbi[0, 1] * dnds[k]
+                    dndy[k] = jcbi[1, 0] * dndr[k] + jcbi[1, 1] * dnds[k]
+                    exxq = exxq + dndx[k] * u[icon[k, iel]]
+                    eyyq = eyyq + dndy[k] * v[icon[k, iel]]
+                    exyq = exyq + dndx[k] * v[icon[k, iel]] * 0.5 + dndy[k] * u[icon[k, iel]] * 0.5
 
-                # constructing 3x8 B matrix
+                # construct 3x8 b_mat matrix
                 for i in range(0, m):
                     i1 = 2 * i
                     i2 = 2 * i + 1
-                    Bmat[0, i1] = dNdx[i]
-                    Bmat[0, i2] = 0
-                    Bmat[1, i1] = 0
-                    Bmat[1, i2] = dNdy[i]
-                    Bmat[2, i1] = dNdy[i]
-                    Bmat[2, i2] = dNdx[i]
+                    b_mat[0, i1] = dndx[i]
+                    b_mat[0, i2] = 0
+                    b_mat[1, i1] = 0
+                    b_mat[1, i2] = dndy[i]
+                    b_mat[2, i1] = dndy[i]
+                    b_mat[2, i2] = dndx[i]
 
-                # computing elemental A matrix
-                Ael = Ael + np.matmul(Bmat.transpose(), np.matmul(viscosity * Cmat, Bmat)) * wq * jcob
+                # compute elemental a_mat matrix
+                a_el = a_el + np.matmul(b_mat.transpose(), np.matmul(viscosity * c_mat, b_mat)) * wq * jcob
 
-                # computing elemental B vector
+                # compute elemental rhs vector
                 for i in range(0, m):
                     i1 = 2 * i
                     i2 = 2 * i + 1
-                    # Bel[i1]=Bel[i1]+N[i]*jcob*wq*density*gx
-                    # Bel[i2]=Bel[i2]+N[i]*jcob*wq*density*gy
-                    Bel[i1] = Bel[i1] + N[i] * jcob * wq * b1(xq, yq)
-                    Bel[i2] = Bel[i2] + N[i] * jcob * wq * b2(xq, yq)
+                    # b_el[i1]=b_el[i1]+n[i]*jcob*wq*density*gx
+                    # b_el[i2]=b_el[i2]+n[i]*jcob*wq*density*gy
+                    b_el[i1] = b_el[i1] + n[i] * jcob * wq * b1(xq, yq)
+                    b_el[i2] = b_el[i2] + n[i] * jcob * wq * b2(xq, yq)
 
         # integrate penalty term at 1 point
         rq = 0.0
         sq = 0.0
         wq = 2.0 * 2.0
 
-        N[0] = 0.25 * (1.0 - rq) * (1.0 - sq)
-        N[1] = 0.25 * (1.0 + rq) * (1.0 - sq)
-        N[2] = 0.25 * (1.0 + rq) * (1.0 + sq)
-        N[3] = 0.25 * (1.0 - rq) * (1.0 + sq)
+        n[0] = 0.25 * (1.0 - rq) * (1.0 - sq)
+        n[1] = 0.25 * (1.0 + rq) * (1.0 - sq)
+        n[2] = 0.25 * (1.0 + rq) * (1.0 + sq)
+        n[3] = 0.25 * (1.0 - rq) * (1.0 + sq)
 
-        dNdr[0] = - 0.25 * (1.0 - sq)
-        dNds[0] = - 0.25 * (1.0 - rq)
-        dNdr[1] = + 0.25 * (1.0 - sq)
-        dNds[1] = - 0.25 * (1.0 + rq)
-        dNdr[2] = + 0.25 * (1.0 + sq)
-        dNds[2] = + 0.25 * (1.0 + rq)
-        dNdr[3] = - 0.25 * (1.0 + sq)
-        dNds[3] = + 0.25 * (1.0 - rq)
-
-        for k in range(0, m):
-            jcb[0, 0] = jcb[0, 0] + dNdr[k] * x[icon[k, iel]]
-            jcb[0, 1] = jcb[0, 1] + dNdr[k] * y[icon[k, iel]]
-            jcb[1, 0] = jcb[1, 0] + dNds[k] * x[icon[k, iel]]
-            jcb[1, 1] = jcb[1, 1] + dNds[k] * y[icon[k, iel]]
-
-        jcob = jcb[0, 0] * jcb[1, 1] - jcb[1, 0] * jcb[0, 1]
-
-        jcbi[0, 0] = jcb[1, 1] / jcob
-        jcbi[0, 1] = - jcb[0, 1] / jcob
-        jcbi[1, 0] = - jcb[1, 0] / jcob
-        jcbi[1, 1] = jcb[0, 0] / jcob
+        dndr[0] = - 0.25 * (1.0 - sq)
+        dnds[0] = - 0.25 * (1.0 - rq)
+        dndr[1] = + 0.25 * (1.0 - sq)
+        dnds[1] = - 0.25 * (1.0 + rq)
+        dndr[2] = + 0.25 * (1.0 + sq)
+        dnds[2] = + 0.25 * (1.0 + rq)
+        dndr[3] = - 0.25 * (1.0 + sq)
+        dnds[3] = + 0.25 * (1.0 - rq)
 
         for k in range(0, m):
-            dNdx[k] = jcbi[0, 0] * dNdr[k] + jcbi[0, 1] * dNds[k]
-            dNdy[k] = jcbi[1, 0] * dNdr[k] + jcbi[1, 1] * dNds[k]
+            jcb[0, 0] = jcb[0, 0] + dndr[k] * x[icon[k, iel]]
+            jcb[0, 1] = jcb[0, 1] + dndr[k] * y[icon[k, iel]]
+            jcb[1, 0] = jcb[1, 0] + dnds[k] * x[icon[k, iel]]
+            jcb[1, 1] = jcb[1, 1] + dnds[k] * y[icon[k, iel]]
+
+        # calculate determinant of the jacobian
+        jcob = np.linalg.det(jcb)
+
+        # calculate the inverse of the jacobian
+        jcbi = np.linalg.inv(jcb)
+
+        for k in range(0, m):
+            dndx[k] = jcbi[0, 0] * dndr[k] + jcbi[0, 1] * dnds[k]
+            dndy[k] = jcbi[1, 0] * dndr[k] + jcbi[1, 1] * dnds[k]
 
         for i in range(0, m):
             i1 = 2 * i
             i2 = 2 * i + 1
-            Bmat[0, i1] = dNdx[i]
-            Bmat[0, i2] = 0.0
-            Bmat[1, i1] = 0.0
-            Bmat[1, i2] = dNdy[i]
-            Bmat[2, i1] = dNdy[i]
-            Bmat[2, i2] = dNdx[i]
+            b_mat[0, i1] = dndx[i]
+            b_mat[0, i2] = 0.0
+            b_mat[1, i1] = 0.0
+            b_mat[1, i2] = dndy[i]
+            b_mat[2, i1] = dndy[i]
+            b_mat[2, i2] = dndx[i]
 
-        Ael = Ael + np.matmul(Bmat.transpose(), np.matmul(penalty * Kmat, Bmat)) * wq * jcob
+        a_el += np.matmul(b_mat.transpose(), np.matmul(penalty * k_mat, b_mat)) * wq * jcob
 
-        # assembly of matrix A and righthand side B
+        # assembe matrix a_mat and right hand side rhs
         for k1 in range(0, m):
             ik = icon[k1, iel]
             for i1 in range(0, ndof):
@@ -311,38 +310,38 @@ def main():
                     for i2 in range(0, ndof):
                         jkk = ndof * k2 + i2
                         m2 = ndof * jk + i2
-                        A[m1, m2] = A[m1, m2] + Ael[ikk, jkk]
-                B[m1] = B[m1] + Bel[ikk]
+                        a_mat[m1, m2] = a_mat[m1, m2] + a_el[ikk, jkk]
+                rhs[m1] = rhs[m1] + b_el[ikk]
 
-    # imposing boundary conditions
+    # impose boundary conditions
     print("imposing boundary conditions")
 
-    for i in range(0, Nfem):
-        if bc_fix[i] == True:
-            Aref = A[i, i]
-            for j in range(0, Nfem):
-                B[j] = B[j] - A[i, j] * bc_val[i]
-                A[i, j] = 0.0
-                A[j, i] = 0.0
-            A[i, i] = Aref
-            B[i] = Aref * bc_val[i]
+    for i in range(0, nfem):
+        if bc_fix[i]:
+            a_matref = a_mat[i, i]
+            for j in range(0, nfem):
+                rhs[j] = rhs[j] - a_mat[i, j] * bc_val[i]
+                a_mat[i, j] = 0.0
+                a_mat[j, i] = 0.0
+            a_mat[i, i] = a_matref
+            rhs[i] = a_matref * bc_val[i]
 
-    print("minimum A =", np.min(A))
-    print("maximum A =", np.max(A))
-    print("minimum B =", np.min(B))
-    print("maximum B =", np.max(B))
+    print("minimum a_mat =", np.min(a_mat))
+    print("maximum a_mat =", np.max(a_mat))
+    print("minimum rhs =", np.min(rhs))
+    print("maximum rhs =", np.max(rhs))
 
-    A_sparse = sparse.csr_matrix(A)
+    # a_mat_sparse = sparse.csr_matrix(a_mat)
 
-    # solving system
+    # solve system
     print("solving system")
     start = time.time()
 
-    # sol=np.linalg.solve(A,B)
-    # sol=spsolve(A_sparse,B)
-    sol, info = scipy.sparse.linalg.cg(A, B, tol=10e-8)
+    # sol=np.linalg.solve(a_mat,rhs)
+    # sol=spsolve(a_mat_sparse,rhs)
+    sol, info = scipy.sparse.linalg.cg(a_mat, rhs, tol=10e-8)
 
-    # putting solution into seprate x,y velocity arrays
+    # put solution into seprate x,y velocity arrays
     for i in range(0, nnp):
         u[i] = sol[i * ndof]
         v[i] = sol[i * ndof + 1]
@@ -352,7 +351,7 @@ def main():
 
     print("time elapsed:", time.time() - start)
 
-    # outputting to file for use with GNUplot
+    # output to file for use with gnuplot
     # file1=open('velocity_u.dat','w')
     # file2=open('velocity_v.dat','w')
     # for i in range(0,nnp):
@@ -363,7 +362,7 @@ def main():
 
     print("done, close figures to exit out of program.")
 
-    # plotting of solution
+    # plot of solution
     fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(10, 10))
 
     utemp = np.reshape(u, (nnx, nny))
