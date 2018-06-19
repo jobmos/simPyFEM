@@ -8,22 +8,23 @@ import time as time
 import matplotlib.pyplot as plt
 import tkinter
 
+
 # right hand side setup function 1
 def b1(x, y):
-    b1 = ((12.0 - 24.0 * y) * x ** 4 + (-24.0 + 48.0 * y) * x ** 3 +
-          (-48.0 * y + 72.0 * y ** 2 - 48.0 * y ** 3 + 12.0) * x ** 2 +
-          (-2.0 + 24.0 * y - 72.0 * y ** 2 + 48.0 * y ** 3) * x +
-          1.0 - 4.0 * y + 12.0 * y ** 2 - 8.0 * y ** 3)
-    return b1
+    val = ((12.0 - 24.0 * y) * x ** 4 + (-24.0 + 48.0 * y) * x ** 3 +
+           (-48.0 * y + 72.0 * y ** 2 - 48.0 * y ** 3 + 12.0) * x ** 2 +
+           (-2.0 + 24.0 * y - 72.0 * y ** 2 + 48.0 * y ** 3) * x +
+           1.0 - 4.0 * y + 12.0 * y ** 2 - 8.0 * y ** 3)
+    return val
 
 
 # right hand side setup function 2
 def b2(x, y):
-    b2 = ((8.0 - 48.0 * y + 48.0 * y ** 2) * x ** 3 +
-          (-12.0 + 72.0 * y - 72 * y ** 2) * x ** 2 +
-          (4.0 - 24.0 * y + 48.0 * y ** 2 - 48.0 * y ** 3 + 24.0 * y ** 4) * x -
-          12.0 * y ** 2 + 24.0 * y ** 3 - 12.0 * y ** 4)
-    return b2
+    val = ((8.0 - 48.0 * y + 48.0 * y ** 2) * x ** 3 +
+           (-12.0 + 72.0 * y - 72 * y ** 2) * x ** 2 +
+           (4.0 - 24.0 * y + 48.0 * y ** 2 - 48.0 * y ** 3 + 24.0 * y ** 4) * x -
+           12.0 * y ** 2 + 24.0 * y ** 3 - 12.0 * y ** 4)
+    return val
 
 
 def main():
@@ -33,8 +34,8 @@ def main():
     m = 4  # nodes that make up an element
     ndof = 2  # degrees of freedom per node
 
-    Lx = 1  # nondimensionalized size of system, x
-    Ly = 1  # nondimensionalized size of system, y
+    Lx = 1  # nondimensional size of system, x
+    Ly = 1  # nondimensional size of system, y
 
     # allowing for argument parsing through command line
     if int(len(sys.argv) == 3):
@@ -60,23 +61,22 @@ def main():
 
     eps = 1.0e-10
 
-    gx=0                # gravity, x
-    gy=1                # gravity, y
+    gx = 0  # gravity, x
+    gy = 1  # gravity, y
 
     # declaring arrays
     print("declaring arrays")
 
-    x = np.zeros((nnp), dtype=float)  # x coordinates
+    x = np.zeros(nnp, dtype=float)  # x coordinates
     y = np.copy(x)  # y coordinates
     u = np.copy(x)  # x velocities
     v = np.copy(x)  # y velocities
     A = np.zeros((Nfem, Nfem), dtype=float)  # matrix of Ax=b
-    B = np.zeros((Nfem), dtype=float)  # righthand side of Ax=b
-    sol = np.zeros((Nfem), dtype=float)  # solution vector of Ax=b
+    B = np.zeros(Nfem, dtype=float)  # righthand side of Ax=b
     icon = np.zeros((m, nel), dtype=int)  # connectivity
-    bc_fix = np.zeros((Nfem), dtype=bool)  # boundary condition, yes/no
-    bc_val = np.zeros((Nfem), dtype=float)  # boundary condition, value
-    N = np.zeros((m), dtype=float)  # shape functions
+    bc_fix = np.zeros(Nfem, dtype=bool)  # boundary condition, yes/no
+    bc_val = np.zeros(Nfem, dtype=float)  # boundary condition, value
+    N = np.zeros(m, dtype=float)  # shape functions
     dNdx = np.copy(N)  # derivative of shape functions
     dNdy = np.copy(N)  # " "
     dNdr = np.copy(N)  # " "
@@ -304,13 +304,13 @@ def main():
         for k1 in range(0, m):
             ik = icon[k1, iel]
             for i1 in range(0, ndof):
-                ikk = ndof * (k1) + i1
-                m1 = ndof * (ik) + i1
+                ikk = ndof * k1 + i1
+                m1 = ndof * ik + i1
                 for k2 in range(0, m):
                     jk = icon[k2, iel]
                     for i2 in range(0, ndof):
-                        jkk = ndof * (k2) + i2
-                        m2 = ndof * (jk) + i2
+                        jkk = ndof * k2 + i2
+                        m2 = ndof * jk + i2
                         A[m1, m2] = A[m1, m2] + Ael[ikk, jkk]
                 B[m1] = B[m1] + Bel[ikk]
 
@@ -352,7 +352,7 @@ def main():
 
     print("time elapsed:", time.time() - start)
 
-    ##outputting to file for use with GNUplot
+    # outputting to file for use with GNUplot
     # file1=open('velocity_u.dat','w')
     # file2=open('velocity_v.dat','w')
     # for i in range(0,nnp):
@@ -379,6 +379,7 @@ def main():
     cbar_ax = fig.add_axes([0.85, 0.32, 0.05, 0.39])
     fig.colorbar(im, cax=cbar_ax)
     plt.show()
+
 
 if __name__ == "__main__":
     main()
