@@ -6,7 +6,8 @@ It showcases functional illustrations of the various features of a FEM code: the
 
 ## To do
 - [ ] Put adaptations of original simPyFEM into separate branches
-- [ ] Clean up these adaptations
+- [ ] PEP-8 compliance across all branches
+- [ ] Add branch: restructure repetitive code blocks into functions
 
 ## Getting Started
 
